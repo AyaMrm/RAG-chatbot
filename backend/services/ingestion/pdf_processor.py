@@ -38,7 +38,7 @@ class PDFProcessor:
                     except Exception as e:
                         logger.error(f"Error extracting pages {num}: {e}")
                         continue
-                    return ' '.join(text_parts)
+                return ' '.join(text_parts)
         except PyPDF2.errors.PdfReadError as e :
             raise ValueError(f"Corrupted or invalid PDF {pdf_path} : {e}") 
         except Exception as e :
@@ -76,3 +76,21 @@ class PDFProcessor:
         text = text.replace('\x00', '')
         return text.strip()
     
+    def get_metadata(self, path: Union[str, Path]) -> Dict:
+        path = Path(path)
+        try:
+            with open(path, 'rb') as file:
+                reader = PyPDF2.PdfReader(file)
+                metadata = reader.metadata or {}
+                return {
+                    'nb_pages': len(reader.pages),
+                    'author': metadata.get('/Author', ''),
+                    'title': metadata.get('/Title', ''),
+                    'subject': metadata.get('/Subject', ''),
+                    'creator': metadata.get('/Creator', ''),
+                    'producer': metadata.get('/Producer', '')
+                }
+        except Exception as e :
+            logger.warning(f"Failed to extract metadata from {path}: {e}")
+            return {'nb_pages': 0 }
+        
